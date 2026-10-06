@@ -171,6 +171,12 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
   }
 </style>
 
+<style id="tol-achievement-colors">
+.ach-good,.ach-mid,.ach-bad{display:inline-block;min-width:56px;padding:4px 8px;border-radius:4px;text-align:center;font-weight:600;}
+.ach-good{background:#e7f6ef;color:#087f5b;}
+.ach-mid{background:#fff4cf;color:#9a6700;}
+.ach-bad{background:#fde8ed;color:#c0395a;}
+</style>
 <style id="sales-type-label-fit">
   #salesTypeChart{overflow:visible!important}
 </style>
@@ -379,6 +385,14 @@ const money=n=>new Intl.NumberFormat("th-TH",{maximumFractionDigits:0}).format(M
 const gapHtml=n=>{const v=Math.round(Number(n)||0); const cls=v>0?"good":v<0?"bad":"neutral"; const txt=v>0?"+"+money(v):money(v); return `<span class="${cls}">${txt}</span>`;};
 const num=n=>new Intl.NumberFormat("th-TH",{maximumFractionDigits:0}).format(Math.round(Number(n)||0));
 const pct=n=>n==null||!isFinite(n)?"—":(Number(n)*100).toFixed(1)+"%";
+function achClass(n){
+  if(n==null || !isFinite(n)) return "ach-bad";
+  const p=Number(n);
+  if(p>=1) return "ach-good";
+  if(p>=0.9) return "ach-mid";
+  return "ach-bad";
+}
+
 
 let filter={dates:["2026-10-06"],area:"",channel:"",shop:""};
 let charts={};
@@ -545,9 +559,9 @@ function renderChannelChart(){
       const z=shops.filter(x=>inScopeShop(x)&&x["Shop Channel"]===c);
       const st=z.reduce((s,x)=>s+(Number(x["Daily Target Sub"])||0),0);
       const sa=z.reduce((s,x)=>s+(Number(x["Actual_Sub"])||0),0);
-      return `<tr onclick='selectChannel(${JSON.stringify(c)})'><td>${c}</td><td>${money(vals[i].t)}</td><td>${money(vals[i].a)}</td><td class="${vals[i].a>=vals[i].t?"good":"bad"}">${pct(vals[i].t?vals[i].a/vals[i].t:null)}</td><td>${gapHtml(vals[i].a-vals[i].t)}</td><td>${num(st)}</td><td>${num(sa)}</td><td>${pct(st?sa/st:null)}</td></tr>`;
+      return `<tr onclick='selectChannel(${JSON.stringify(c)})'><td>${c}</td><td>${money(vals[i].t)}</td><td>${money(vals[i].a)}</td><td class="${achClass(vals[i].t?vals[i].a/vals[i].t:null)}">${pct(vals[i].t?vals[i].a/vals[i].t:null)}</td><td>${gapHtml(vals[i].a-vals[i].t)}</td><td>${num(st)}</td><td>${num(sa)}</td><td class="${achClass(st?sa/st:null)}">${pct(st?sa/st:null)}</td></tr>`;
     }).join("")+
-    `<tr><td><b>Total</b></td><td><b>${money(totalT)}</b></td><td><b>${money(totalA)}</b></td><td><b>${pct(totalT?totalA/totalT:null)}</b></td><td><b>${gapHtml(totalA-totalT)}</b></td><td><b>${num(totalST)}</b></td><td><b>${num(totalSA)}</b></td><td><b>${pct(totalST?totalSA/totalST:null)}</b></td></tr>`;
+    `<tr><td><b>Total</b></td><td><b>${money(totalT)}</b></td><td><b>${money(totalA)}</b></td><td><b><span class="${achClass(totalT?totalA/totalT:null)}">${pct(totalT?totalA/totalT:null)}</span></b></td><td><b>${gapHtml(totalA-totalT)}</b></td><td><b>${num(totalST)}</b></td><td><b>${num(totalSA)}</b></td><td><b><span class="${achClass(totalST?totalSA/totalST:null)}">${pct(totalST?totalSA/totalST:null)}</span></b></td></tr>`;
   }
 }
 function renderAreaTable(){
@@ -565,9 +579,9 @@ function renderAreaTable(){
     const active=(filter.area===x.area)?" class='activeRow'":"";
     return `<tr${active} onclick='selectArea(${JSON.stringify(x.area)})'>
       <td>${i+1}</td><td class="area-col">${x.area}</td>
-      <td>${money(x.tt)}</td><td>${money(x.ta)}</td><td>${pct(x.tt?x.ta/x.tt:null)}</td>
-      <td>${money(x.dtg)}</td><td>${money(x.da)}</td><td>${pct(x.dtg?x.da/x.dtg:null)}</td>
-      <td>${money(x.at)}</td><td>${money(x.aa)}</td><td class="${x.ach>=1?"good":"bad"}">${pct(x.ach)}</td><td>${gapHtml(x.gap)}</td>
+      <td>${money(x.tt)}</td><td>${money(x.ta)}</td><td><span class="${achClass(x.tt?x.ta/x.tt:null)}">${pct(x.tt?x.ta/x.tt:null)}</span></td>
+      <td>${money(x.dtg)}</td><td>${money(x.da)}</td><td><span class="${achClass(x.dtg?x.da/x.dtg:null)}">${pct(x.dtg?x.da/x.dtg:null)}</span></td>
+      <td>${money(x.at)}</td><td>${money(x.aa)}</td><td class="${achClass(x.ach)}">${pct(x.ach)}</td><td>${gapHtml(x.gap)}</td>
     </tr>`;
   }).join("");
 } 
@@ -587,7 +601,7 @@ function renderShopDrill(){
       <td>${x["Shop Channel"]}</td>
       <td>${money(x["Daily Target Revenue"])}</td>
       <td>${money(x.Actual_Revenue)}</td>
-      <td class="${x["Revenue Achievement"]>=1?"good":"bad"}">${pct(x["Revenue Achievement"])}</td>
+      <td class="${achClass(x["Revenue Achievement"])}">${pct(x["Revenue Achievement"])}</td>
       <td>${gapHtml(x["Revenue Gap"])}</td>
       <td>${num(x["Daily Target Sub"])}</td>
       <td>${num(x.Actual_Sub)}</td>
@@ -674,11 +688,11 @@ function renderTop(){
       <td>${x["Shop Channel"]}</td>
       <td>${money(revTarget)}</td>
       <td>${money(revActual)}</td>
-      <td class="${revAch!==null&&revAch>=1?"good":"bad"}">${pct(revAch)}</td>
+      <td class="${achClass(revAch)}">${pct(revAch)}</td>
       <td>${gapHtml(gap)}</td>
       <td>${num(subTarget)}</td>
       <td>${num(subActual)}</td>
-      <td class="${subAch!==null&&subAch>=1?"good":"bad"}">${pct(subAch)}</td>
+      <td class="${achClass(subAch)}">${pct(subAch)}</td>
     </tr>`;
   }).join("");
 }
