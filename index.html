@@ -314,7 +314,21 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
   .top-shop-panel th:nth-child(4),
   .top-shop-panel td:nth-child(4){text-align:left;}
 </style>
-<style id="target-master-note">.target-master-note{margin:8px 0;padding:8px 12px;border-radius:8px;background:#f5f7fa;color:#4b5563;font-size:12px}</style></head><body>
+<style id="target-master-note">.target-master-note{margin:8px 0;padding:8px 12px;border-radius:8px;background:#f5f7fa;color:#4b5563;font-size:12px}</style>
+<style id="multi-date-filter">
+.date-multi{position:relative;min-width:190px;z-index:50}
+.date-multi-button{width:100%;min-height:40px;padding:9px 34px 9px 14px;border:1px solid #d4dce7;border-radius:8px;background:#fff;color:#172033;font-size:14px;text-align:left;cursor:pointer;position:relative}
+.date-multi-button:after{content:"▾";position:absolute;right:12px;top:10px;color:#64748b;font-size:13px}
+.date-multi-menu{display:none;position:absolute;left:0;top:calc(100% + 5px);width:100%;min-width:220px;max-height:300px;overflow:auto;background:#fff;border:1px solid #d4dce7;border-radius:10px;box-shadow:0 8px 24px rgba(15,35,65,.14);padding:6px;z-index:9999}
+.date-multi.open .date-multi-menu{display:block}
+.date-multi-actions{display:flex;gap:6px;padding:4px 4px 7px;border-bottom:1px solid #edf1f5;margin-bottom:4px}
+.date-multi-actions button{border:1px solid #d4dce7;background:#f8fafc;border-radius:7px;padding:5px 8px;font-size:12px;color:#0b3b70;cursor:pointer}
+.date-multi-item{display:flex;align-items:center;gap:9px;padding:8px;border-radius:7px;color:#172033;font-size:13px;cursor:pointer}
+.date-multi-item:hover{background:#f6f9fd}
+.date-multi-item input{width:16px;height:16px;cursor:pointer}
+.date-multi-hint{padding:6px 8px 4px;color:#64748b;font-size:11px}
+</style>
+</head><body>
 <div class="header"><h1>W&W POSTPAY — DAILY SALE PERFORMANCE</h1><p id="headerDate">Daily View · Revenue = Primary KPI · 15 Area Master Order · V7 Interactive Diagnostic</p></div>
 <div class="wrap"><div class="target-master-note">Daily Target ยึดจาก Target File Oct'26 เป็น Master เดียวกันทุกวัน · Revenue Target = 1,133,186 · Sub Target = —</div>
 <div class="toolbar">
@@ -366,17 +380,41 @@ const gapHtml=n=>{const v=Math.round(Number(n)||0); const cls=v>0?"good":v<0?"ba
 const num=n=>new Intl.NumberFormat("th-TH",{maximumFractionDigits:0}).format(Math.round(Number(n)||0));
 const pct=n=>n==null||!isFinite(n)?"—":(Number(n)*100).toFixed(1)+"%";
 
-let filter={date:"2026-10-06",area:"",channel:"",shop:""};
+let filter={dates:["2026-10-06"],area:"",channel:"",shop:""};
 let charts={};
 
+function dateMatches(x){
+  return !filter.dates.length || filter.dates.includes(String(x.Date));
+}
 function inScopeShop(x){
-  return (!filter.date||x.Date===filter.date)&&(!filter.area||x.Area===filter.area)&&(!filter.channel||x["Shop Channel"]===filter.channel)&&(!filter.shop||x["Shop Code"]===filter.shop);
+  return dateMatches(x)&&(!filter.area||x.Area===filter.area)&&(!filter.channel||x["Shop Channel"]===filter.channel)&&(!filter.shop||x["Shop Code"]===filter.shop);
 }
 function inScopeRow(x){
-  return (!filter.date||x.Date===filter.date)&&(!filter.area||x.Area===filter.area)&&(!filter.channel||x["Shop Channel"]===filter.channel)&&(!filter.shop||x["Shop Code"]===filter.shop);
+  return dateMatches(x)&&(!filter.area||x.Area===filter.area)&&(!filter.channel||x["Shop Channel"]===filter.channel)&&(!filter.shop||x["Shop Code"]===filter.shop);
 }
 function scopeShops(){return shops.filter(inScopeShop)}
 function scopeRows(){return rows.filter(inScopeRow)}
+function aggregateShopRows(list){
+  const m=new Map();
+  list.forEach(x=>{
+    const k=String(x["Shop Code"]||"");
+    if(!k)return;
+    if(!m.has(k)) m.set(k,{...x,"Daily Target Revenue":0,"Actual_Revenue":0,"Daily Target Sub":0,"Actual_Sub":0,"Approach":0,"Not_Closed":0});
+    const a=m.get(k);
+    a["Daily Target Revenue"]+=(Number(x["Daily Target Revenue"])||0);
+    a["Actual_Revenue"]+=(Number(x.Actual_Revenue)||0);
+    a["Daily Target Sub"]+=(Number(x["Daily Target Sub"])||0);
+    a["Actual_Sub"]+=(Number(x.Actual_Sub)||0);
+    a["Approach"]+=(Number(x.Approach)||0);
+    a["Not_Closed"]+=(Number(x.Not_Closed)||0);
+  });
+  return [...m.values()].map(a=>{
+    a["Revenue Achievement"]=a["Daily Target Revenue"]?a.Actual_Revenue/a["Daily Target Revenue"]:0;
+    a["Sub Achievement"]=a["Daily Target Sub"]?a.Actual_Sub/a["Daily Target Sub"]:0;
+    a["Revenue Gap"]=a.Actual_Revenue-a["Daily Target Revenue"];
+    return a;
+  });
+}
 
 function metrics(){
   const z=scopeShops();
@@ -466,7 +504,7 @@ function renderCards(){
 function renderAreaChart(){
   // Keep the complete 15-Area master chart visible even when an Area is selected.
   // The selected Area is highlighted instead of filtering the other Areas out.
-  const base=shops.filter(x=>!filter.date||x.Date===filter.date)
+  const base=shops.filter(x=>dateMatches(x))
     .filter(x=>!filter.channel||x["Shop Channel"]===filter.channel);
   const vals=MASTER.map(area=>{const z=base.filter(x=>x.Area===area);
     return {a:z.reduce((s,x)=>s+(Number(x.Actual_Revenue)||0),0),
@@ -536,8 +574,8 @@ function renderAreaTable(){
 function renderShopDrill(){
   const box=document.getElementById("detail"), title=document.getElementById("detailTitle");
   if(!filter.area){box.classList.remove("show");return}
-  const z=shops
-    .filter(x=>inScopeShop(x)&&x.Area===filter.area)
+  const z=aggregateShopRows(shops
+    .filter(x=>inScopeShop(x)&&x.Area===filter.area))
     .sort((a,b)=>(Number(b["Revenue Achievement"])||0)-(Number(a["Revenue Achievement"])||0));
 
   title.textContent=`Shop Drill-down — ${filter.area}${filter.channel?" · "+filter.channel:""}${filter.shop?" · "+(z[0]?.["Shop Name"]||filter.shop):""}`;
@@ -610,7 +648,7 @@ function renderShopNC(){
 function renderTop(){
   // Top Shop keeps the existing Revenue ranking, but now exposes the same
   // Revenue + Sub detail used in the Area Performance section.
-  const z=scopeShops()
+  const z=aggregateShopRows(scopeShops())
     .sort((a,b)=>{
       const aTarget=Number(a["Daily Target Revenue"])||0;
       const bTarget=Number(b["Daily Target Revenue"])||0;
@@ -657,7 +695,7 @@ function selectShop(code){
   const next=(filter.shop===code)?"":code;
   filter.shop=next;
   if(filter.shop){
-    const selected=shops.find(x=>String(x.Date)===String(filter.date)&&String(x["Shop Code"])===String(filter.shop))
+    const selected=shops.find(x=>dateMatches(x)&&String(x["Shop Code"])===String(filter.shop))
       || shops.find(x=>String(x["Shop Code"])===String(filter.shop));
     if(selected){
       filter.area=selected.Area||"";
@@ -673,7 +711,7 @@ function closeDetail(){
   filter.channel="";
   refresh();
 }
-function resetFilters(){filter={date:filter.date,area:"",channel:"",shop:""};refresh()}
+function resetFilters(){filter={dates:filter.dates.length?filter.dates:[...new Set(rows.map(x=>x.Date).filter(Boolean))],area:"",channel:"",shop:""};refresh()}
 function escHTML(v){
   return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
@@ -718,7 +756,15 @@ function updateFilterUI(){
 
   areaSel.value=filter.area;
   channelSel.value=filter.channel;
-  if(ds) ds.value=filter.date;
+  if(ds) ds.value=filter.dates[filter.dates.length-1]||"";
+  const dm=document.getElementById("dateMulti");
+  if(dm){
+    const btn=dm.querySelector("#dateMultiButton");
+    const checks=[...dm.querySelectorAll('input[type="checkbox"]')];
+    checks.forEach(x=>x.checked=filter.dates.includes(x.value));
+    const fmt=d=>{const dt=new Date(d+"T00:00:00");return isNaN(dt)?d:dt.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})};
+    if(btn) btn.textContent=filter.dates.length===0?"เลือกวันที่":filter.dates.length===1?fmt(filter.dates[0]):`เลือกแล้ว ${filter.dates.length} วัน`;
+  }
 
   // Channel -> Shop. Shop list comes ONLY from SHOP_MASTER, not daily rows.
   const s=document.getElementById("shopSelect");
@@ -746,6 +792,35 @@ function populate(){
     const label=isNaN(dt)?d:dt.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"});
     return `<option value="${d}">${label}</option>`;
   }).join("");
+  if(ds){
+    ds.style.display="none";
+    const multi=document.createElement("div");
+    multi.className="date-multi"; multi.id="dateMulti";
+    multi.innerHTML=`<button type="button" id="dateMultiButton" class="date-multi-button" aria-haspopup="listbox" aria-expanded="false">เลือกวันที่</button>
+      <div id="dateMultiMenu" class="date-multi-menu" role="listbox" aria-multiselectable="true"></div>`;
+    ds.parentNode.insertBefore(multi,ds);
+    const menu=multi.querySelector("#dateMultiMenu");
+    const fmt=d=>{const dt=new Date(d+"T00:00:00");return isNaN(dt)?d:dt.toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})};
+    menu.innerHTML=`<div class="date-multi-actions"><button type="button" id="dateAll">All</button><button type="button" id="dateClear">Clear</button></div>`+
+      `<div class="date-multi-hint">เลือกได้มากกว่า 1 วัน ระบบจะรวมข้อมูลทุกวันที่เลือก</div>`+
+      dates.map(d=>`<label class="date-multi-item"><input type="checkbox" value="${d}"> <span>${fmt(d)}</span></label>`).join("");
+    const button=multi.querySelector("#dateMultiButton");
+    const updateButton=()=>{
+      const ds2=[...menu.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
+      button.textContent=ds2.length===0?"เลือกวันที่":ds2.length===1?fmt(ds2[0]):`เลือกแล้ว ${ds2.length} วัน`;
+      menu.querySelectorAll('input[type="checkbox"]').forEach(x=>x.checked=filter.dates.includes(x.value));
+    };
+    menu.querySelectorAll('input[type="checkbox"]').forEach(cb=>cb.addEventListener("change",()=>{
+      filter.dates=[...menu.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value).sort();
+      if(!filter.dates.length) filter.dates=[...dates];
+      filter.area="";filter.channel="";filter.shop="";updateButton();refresh();
+    }));
+    menu.querySelector("#dateAll").addEventListener("click",()=>{filter.dates=[...dates];filter.area="";filter.channel="";filter.shop="";updateButton();refresh()});
+    menu.querySelector("#dateClear").addEventListener("click",()=>{filter.dates=[];updateButton();refresh()});
+    button.addEventListener("click",e=>{e.stopPropagation();multi.classList.toggle("open");button.setAttribute("aria-expanded",multi.classList.contains("open"));updateButton()});
+    document.addEventListener("click",e=>{if(!multi.contains(e.target)){multi.classList.remove("open");button.setAttribute("aria-expanded","false")}});
+    updateButton();
+  }
 
   const toolbar=document.querySelector(".toolbar");
   const s=document.createElement("select");
@@ -762,7 +837,6 @@ function populate(){
   fs.style.padding="9px 12px";
   fs.style.display="none";
 }
-document.getElementById("dateSelect").addEventListener("change",e=>{filter.date=e.target.value;filter.area="";filter.channel="";filter.shop="";refresh()});
 document.getElementById("areaSelect").addEventListener("change",e=>{filter.area=e.target.value;filter.shop="";refresh()});
 document.getElementById("channelSelect").addEventListener("change",e=>{filter.channel=e.target.value;filter.shop="";refresh()});
 
@@ -777,7 +851,7 @@ if(document.getElementById("shopSelect")) document.getElementById("shopSelect").
   const code=e.target.value;
   filter.shop=code;
   if(code){
-    const selected=shops.find(x=>String(x.Date)===String(filter.date)&&String(x["Shop Code"])===String(code))
+    const selected=shops.find(x=>dateMatches(x)&&String(x["Shop Code"])===String(code))
       || shops.find(x=>String(x["Shop Code"])===String(code));
     if(selected){ filter.area=selected.Area||""; filter.channel=selected["Shop Channel"]||""; }
   }
