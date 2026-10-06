@@ -338,8 +338,8 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
 <style id="postpay-tol-header">
 .header {
   position:relative !important;
-  min-height:132px !important;
-  padding:24px 28px 22px !important;
+  min-height:90px !important;
+  padding:14px 26px 12px !important;
   overflow:hidden !important;
   color:#fff !important;
   background:
@@ -348,7 +348,7 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
 }
 .header h1 {
   position:relative !important; z-index:3 !important; margin:0 !important;
-  font-size:34px !important; line-height:1.1 !important; font-weight:800 !important;
+  font-size:32px !important; line-height:1.1 !important; font-weight:800 !important;
   letter-spacing:.2px !important; color:#fff !important;
   text-shadow:0 2px 8px rgba(0,0,0,.72) !important;
 }
@@ -356,8 +356,8 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
 .header .ww-title { color:#fff !important; -webkit-text-fill-color:#fff !important; }
 .header .ww-sep { color:#5fd5ff !important; -webkit-text-fill-color:#5fd5ff !important; }
 .header p {
-  position:relative !important; z-index:3 !important; margin:10px 0 0 !important;
-  font-size:15px !important; font-weight:600 !important; line-height:1.3 !important;
+  position:relative !important; z-index:3 !important; margin:6px 0 0 !important;
+  font-size:14px !important; font-weight:600 !important; line-height:1.3 !important;
   color:#e8f8ff !important; -webkit-text-fill-color:#e8f8ff !important;
   text-shadow:0 2px 7px rgba(0,0,0,.8) !important; max-width:1100px !important;
 }
@@ -367,7 +367,10 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
   .header p{font-size:13px !important}
 }
 </style>
-</head><body>
+<style id="postpay-tol-header-compact-final">
+.header{height:90px!important;min-height:90px!important;}
+@media(max-width:650px){.header{height:auto!important;min-height:90px!important;}}
+</style></head><body>
 <div class="header"><h1><span class="ww-mark">W&amp;W</span><span class="ww-title"> POSTPAY</span><span class="ww-sep"> — </span><span class="ww-title">DAILY SALE PERFORMANCE</span></h1><p id="headerDate">Daily View · Revenue = Primary KPI · 15 Area Master Order · Oct 2026 · Area / Channel Drilldown</p></div>
 <div class="wrap"><div class="target-master-note">Daily Target ยึดจาก Target File Oct'26 เป็น Master เดียวกันทุกวัน · Revenue Target = 1,133,186</div>
 <div class="toolbar">
