@@ -334,6 +334,22 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
 .date-multi-item input{width:16px;height:16px;cursor:pointer}
 .date-multi-hint{padding:6px 8px 4px;color:#64748b;font-size:11px}
 </style>
+
+<style id="executive-analysis-action-v2">
+.exec-v2{margin-top:14px}
+.exec-v2-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.exec-v2-head h2{margin:0}.exec-v2-sub{font-size:12px;color:#64748b;margin-top:3px}
+.exec-v2-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exec-v2-box{border:1px solid #e2e8f0;border-radius:10px;padding:13px;background:#fff}
+.exec-v2-label{font-size:12px;font-weight:800;color:#0b3b70;letter-spacing:.3px;margin-bottom:8px}
+.exec-v2-item{padding:8px 0;border-bottom:1px solid #eef2f7;line-height:1.5;font-size:13px}.exec-v2-item:last-child{border-bottom:0}
+.exec-v2-kpi{font-weight:800}.exec-v2-red{color:#dc2626}.exec-v2-green{color:#15803d}.exec-v2-amber{color:#b45309}
+.exec-v2-action{display:grid;grid-template-columns:28px 1fr;gap:9px;padding:10px 0;border-bottom:1px solid #eef2f7;line-height:1.5;font-size:13px}.exec-v2-action:last-child{border-bottom:0}
+.exec-v2-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0b3b70;color:#fff;font-weight:800}
+.exec-v2-owner{font-size:11px;color:#64748b;margin-top:3px}.exec-v2-tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:800;margin-right:5px;background:#eef4ff;color:#0b3b70}
+.exec-v2-full{grid-column:1/-1}.exec-v2-table{width:100%;border-collapse:collapse;font-size:12px}.exec-v2-table th,.exec-v2-table td{padding:7px 8px;border-bottom:1px solid #edf1f5;text-align:left}.exec-v2-table th{background:#f7f9fc;color:#475569;font-weight:800}.exec-v2-table td.num{text-align:right}.exec-v2-note{font-size:11px;color:#64748b;margin-top:7px}
+@media(max-width:900px){.exec-v2-grid{grid-template-columns:1fr}.exec-v2-full{grid-column:auto}}
+</style>
 </head><body>
 <div class="header"><h1>W&W POSTPAY — DAILY SALE PERFORMANCE</h1><p id="headerDate">Daily View · Revenue = Primary KPI · 15 Area Master Order · V7 Interactive Diagnostic</p></div>
 <div class="wrap"><div class="target-master-note">Daily Target ยึดจาก Target File Oct'26 เป็น Master เดียวกันทุกวัน · Revenue Target = 1,133,186 · Sub Target = —</div>
@@ -375,6 +391,21 @@ th{color:#64748b;background:#f8fafc;position:sticky;top:0;z-index:1}.clickable t
 <th>Revenue Target</th><th>Revenue Actual</th><th>Revenue Ach.</th><th>Revenue Gap</th>
 <th>Sub Target</th><th>Sub Actual</th><th>Sub Ach.</th>
 </tr></thead><tbody id="topBody"></tbody></table></div></div>
+
+
+<div class="panel exec-v2" id="executiveAnalysisV2">
+  <div class="exec-v2-head">
+    <div><h2>Executive Analysis & Action</h2><div class="exec-v2-sub">วิเคราะห์ Revenue Performance → Funnel → Root Cause → Priority Action จากข้อมูลตามวันที่ / Area / Channel ที่เลือก</div></div>
+    <div id="execV2Status" class="exec-v2-tag">DAILY DIAGNOSTIC</div>
+  </div>
+  <div class="exec-v2-grid">
+    <div class="exec-v2-box"><div class="exec-v2-label">1. PERFORMANCE ANALYSIS</div><div id="execV2Performance"></div></div>
+    <div class="exec-v2-box"><div class="exec-v2-label">2. FUNNEL & ROOT CAUSE ANALYSIS</div><div id="execV2Root"></div></div>
+    <div class="exec-v2-box exec-v2-full"><div class="exec-v2-label">3. AREA PRIORITY — จุดที่ต้องเร่งจัดการ</div><div class="tw"><table class="exec-v2-table"><thead><tr><th>Priority</th><th>Area</th><th>Revenue Ach.</th><th>Revenue Gap</th><th>Approach</th><th>Not Closed</th><th>Diagnosis</th></tr></thead><tbody id="execV2Area"></tbody></table></div></div>
+    <div class="exec-v2-box"><div class="exec-v2-label">4. PRIORITY ACTION — วันนี้</div><div id="execV2Action"></div></div>
+    <div class="exec-v2-box"><div class="exec-v2-label">5. MANAGEMENT FOLLOW-UP</div><div id="execV2Follow"></div></div>
+  </div>
+</div>
 
 <div class="panel" style="margin-top:14px"><h2>Management Logic</h2><div class="note"><b>Revenue → Sale Performance</b> · <b>Sub → Volume</b> · <b>Channel → True / DTAC</b> · <b>Sales Type → Revenue Mix</b> · <b>Not Closed → Diagnostic / Root Cause</b> · <b>Shop → Actionable Drill Down</b>. All 15 Areas remain in the agreed Master Order.</div></div>
 </div>
@@ -700,8 +731,46 @@ function renderActions(){
   const arr=MASTER.map(area=>{const z=shops.filter(x=>inScopeShop(x)&&x.Area===area);const t=z.reduce((s,x)=>s+x["Daily Target Revenue"],0),a=z.reduce((s,x)=>s+x.Actual_Revenue,0),nc=z.reduce((s,x)=>s+x.Not_Closed,0);return{area,t,a,nc,g:a-t,ach:t?a/t:0}}).filter(x=>x.g<0).sort((a,b)=>a.g-b.g);
   document.getElementById("actions").innerHTML=arr.slice(0,7).map(x=>`<div class="reason"><b>${x.area}</b><br><span class="note">Revenue Gap ${money(x.g)} · Achievement ${pct(x.ach)} · Not Closed ${num(x.nc)}</span></div>`).join("")||'<div class="note">No negative Revenue Gap in current filter.</div>';
 }
+
+function renderExecutiveV2(){
+  const scoped=scopeShops();
+  const rows=scopeRows();
+  const sum=(a,k)=>a.reduce((n,x)=>n+(Number(x[k])||0),0);
+  const target=sum(scoped,"Daily Target Revenue"), actual=sum(scoped,"Actual_Revenue"), approach=sum(scoped,"Approach"), nc=sum(scoped,"Not_Closed");
+  const gap=actual-target, ach=target?actual/target:0, closed=rows.filter(x=>x["Closed"]===true || String(x["Closed"]).toLowerCase()==="true").length;
+  const conv=approach?closed/approach:0;
+  const status=ach>=1?"ON TARGET":ach>=.9?"WATCH":"ACTION REQUIRED";
+  const st=document.getElementById('execV2Status'); if(st){st.textContent=status;st.className='exec-v2-tag '+(ach>=1?'exec-v2-green':ach>=.9?'exec-v2-amber':'exec-v2-red')}
+  const areaRows=MASTER.map(area=>{const z=scoped.filter(x=>x.Area===area);const t=sum(z,"Daily Target Revenue"),a=sum(z,"Actual_Revenue"),ap=sum(z,"Approach"),n=sum(z,"Not_Closed");return{area,t,a,ap,n,g:a-t,ach:t?a/t:0,conv:ap?(z.filter(x=>Number(x.Actual_Revenue)>0).length/ap):0}}).filter(x=>x.t>0||x.a>0||x.n>0);
+  const worst=areaRows.filter(x=>x.g<0).sort((a,b)=>a.g-b.g).slice(0,5);
+  const best=areaRows.filter(x=>x.g>=0).sort((a,b)=>b.g-a.g).slice(0,3);
+  const reason={}; rows.filter(x=>x["Not Closed"]).forEach(x=>{const r=String(x.Reason||'ไม่ระบุ').trim()||'ไม่ระบุ';reason[r]=(reason[r]||0)+1});
+  const reasons=Object.entries(reason).sort((a,b)=>b[1]-a[1]);
+  const perf=document.getElementById('execV2Performance');
+  if(perf) perf.innerHTML=`
+    <div class="exec-v2-item"><b>สถานะวันนี้:</b> Revenue Actual <span class="exec-v2-kpi">${money(actual)}</span> เทียบ Target <span class="exec-v2-kpi">${money(target)}</span> → Achievement <span class="exec-v2-kpi ${ach>=1?'exec-v2-green':'exec-v2-red'}">${pct(ach)}</span> / Gap <span class="exec-v2-kpi ${gap>=0?'exec-v2-green':'exec-v2-red'}">${gapHtml(gap)}</span></div>
+    <div class="exec-v2-item"><b>Funnel:</b> Approach <span class="exec-v2-kpi">${num(approach)}</span> → Closed <span class="exec-v2-kpi">${num(closed)}</span> → Conversion <span class="exec-v2-kpi ${conv>=.5?'exec-v2-green':'exec-v2-amber'}">${pct(conv)}</span>. ${conv<.5?'Approach มีอยู่ แต่การเปลี่ยนเป็น Sale ยังต่ำ ควรเน้น Conversion มากกว่าการเพิ่ม Traffic เพียงอย่างเดียว':'Conversion อยู่ในระดับที่ใช้ได้ ให้โฟกัสเพิ่ม Opportunity ในพื้นที่ที่ Approach ต่ำ'}</div>
+    <div class="exec-v2-item"><b>Not Closed:</b> <span class="exec-v2-kpi">${num(nc)}</span> รายการ ${approach?`คิดเป็น ${pct(nc/approach)} ของ Approach`:''} — ควรแยกเคสที่มีโอกาส Recover ออกจากเคสที่ติดข้อจำกัด</div>
+    <div class="exec-v2-item"><b>จุดช่วย Performance:</b> ${best.length?best.map(x=>`${x.area} (${pct(x.ach)}, Gap +${money(x.g)})`).join(' · '):'ยังไม่พบ Area ที่ช่วยชดเชย Gap'}</div>`;
+  const root=document.getElementById('execV2Root');
+  if(root) root.innerHTML=(reasons.length?reasons.slice(0,5).map((x,i)=>`<div class="exec-v2-item"><b>#${i+1} ${escHTML(x[0])}</b> — ${num(x[1])} เคส (${pct(nc?x[1]/nc:null)})<br><span class="exec-v2-owner">Interpretation: ${i===0?'เป็นสาเหตุหลัก ควรจัดการก่อนและกำหนดวิธี Recover ให้ชัดเจน':'จัดลำดับรองลงมาตาม Impact และความสามารถในการ Recover'}</span></div>`).join(''):'<div class="exec-v2-item">ไม่มี Not Closed ในเงื่อนไขที่เลือก</div>')+`<div class="exec-v2-item"><b>ข้อสรุป:</b> ${worst.length?`Gap กระจุกตัวที่ ${worst.slice(0,3).map(x=>x.area).join(', ')} จึงควรลง Action ระดับ Shop ในพื้นที่เหล่านี้ก่อน`: 'ยังไม่พบ Gap ติดลบใน Area ที่อยู่ใน Filter'}</div>`;
+  const ar=document.getElementById('execV2Area');
+  if(ar) ar.innerHTML=worst.map((x,i)=>{const diag=x.ap<Math.max(1,target?approach/Math.max(1,areaRows.length):1)?'Coverage / Approach ต่ำ':'Conversion / Closing ต้องเร่ง';return `<tr><td><span class="exec-v2-tag ${i===0?'exec-v2-red':'exec-v2-amber'}">P${i+1}</span></td><td><b>${escHTML(x.area)}</b></td><td>${pct(x.ach)}</td><td class="num">${gapHtml(x.g)}</td><td class="num">${num(x.ap)}</td><td class="num">${num(x.n)}</td><td>${diag}</td></tr>`}).join('')||'<tr><td colspan="7" style="text-align:center">ไม่พบ Area ที่มี Revenue Gap ติดลบ</td></tr>';
+  const acts=[];
+  if(worst.length){const w=worst[0];acts.push(`<div class="exec-v2-action"><div class="exec-v2-num">1</div><div><b>Recover Gap จุดใหญ่สุด: ${escHTML(w.area)}</b><br>แตก Gap ลงระดับ Shop แล้วเรียงจาก Gap สูงสุด → ต่ำสุด จากนั้นกำหนดจำนวน Sale ที่ต้อง Recover ให้แต่ละ Shop<div class="exec-v2-owner">Owner: Area Manager + Shop Manager · Due: ภายในวันเดียวกัน · KPI: Revenue Gap ลดลง</div></div></div>`)}
+  if(reasons.length){acts.push(`<div class="exec-v2-action"><div class="exec-v2-num">2</div><div><b>จัดการ Root Cause อันดับ 1: ${escHTML(reasons[0][0])}</b><br>ดึง Not Closed รายเคส แยก Hot / Warm / Cold และกำหนด Next Action เฉพาะเคสที่ Recover ได้<div class="exec-v2-owner">Owner: Shop Manager / Sales Staff · Due: Follow-up 24–48 ชม. · KPI: Not Closed → Closed</div></div></div>`)}
+  if(conv<.5){acts.push(`<div class="exec-v2-action"><div class="exec-v2-num">3</div><div><b>เร่ง Conversion จาก Approach เดิม</b><br>ตรวจสอบ Script / Offer / Objection ที่ทำให้ลูกค้าไม่ปิดการขาย และ Coach พนักงานใน Shop ที่ Approach สูงแต่ Closed ต่ำ<div class="exec-v2-owner">Owner: Shop Manager · Due: วันนี้ · KPI: Conversion Rate</div></div></div>`)}else{acts.push(`<div class="exec-v2-action"><div class="exec-v2-num">3</div><div><b>เพิ่ม Coverage ใน Shop ที่ Approach ต่ำ</b><br>จัดกำลังและกำหนด Daily Approach Target ให้ Shop ที่ Revenue ต่ำแต่ Conversion ยังอยู่ในเกณฑ์ดี<div class="exec-v2-owner">Owner: Area Manager · Due: วันนี้ · KPI: Approach / Revenue</div></div></div>`)}
+  if(best.length){acts.push(`<div class="exec-v2-action"><div class="exec-v2-num">4</div><div><b>Replicate Best Practice</b><br>นำ ${best.map(x=>escHTML(x.area)).join(' / ')} มาเป็น Benchmark เทียบ Approach → Conversion → Revenue กับ Bottom Area<div class="exec-v2-owner">Owner: Area Manager · Due: Weekly Review · KPI: Bottom Area Achievement</div></div></div>`)}
+  const act=document.getElementById('execV2Action'); if(act) act.innerHTML=acts.join('');
+  const follow=document.getElementById('execV2Follow'); if(follow) follow.innerHTML=`
+    <div class="exec-v2-item"><b>Today:</b> ตรวจ Top 3 Gap Area และ Top 10 Gap Shops → assign target / owner ให้ครบ</div>
+    <div class="exec-v2-item"><b>24–48 hrs:</b> ติดตาม Not Closed ที่มีโอกาส Recover และวัดจำนวนที่เปลี่ยนเป็น Closed</div>
+    <div class="exec-v2-item"><b>Weekly:</b> Trend Achievement, Conversion และ Root Cause Share เพื่อดูว่า Action ใดได้ผลจริง</div>
+    <div class="exec-v2-item"><b>Escalate:</b> เคสที่เกิดจาก Coverage / ราคา / Promotion / เงื่อนไขลูกค้า ให้แยกเป็น Business Issue ไม่ควรตีเป็น Productivity ของ Shop โดยตรง</div>`;
+}
+
 function refresh(){
-  renderCards();renderAreaChart();renderChannelChart();renderAreaTable();renderShopDrill();renderMix();renderReasons();renderShopNC();renderTop();renderActions();updateFilterUI();
+  renderCards();renderAreaChart();renderChannelChart();renderAreaTable();renderShopDrill();renderMix();renderReasons();renderShopNC();renderTop();renderActions();renderExecutiveV2();updateFilterUI();
 }
 function selectArea(a){filter.area=(filter.area===a)?"":a;filter.channel="";filter.shop="";refresh()}
 function selectChannel(c){filter.channel=(filter.channel===c)?"":c;filter.shop="";refresh()}
